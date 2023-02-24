@@ -51,6 +51,16 @@ func main() {
 		wg.Wait()
 		close(validationStruct)
 
+		waiting := true
+		for _, v := range steps {
+			if v {
+				waiting = false
+			}
+		}
+		if waiting {
+			fmt.Println("Carregando...")
+		}
+
 		for v := range validationStruct {
 			switch v.imgType {
 			case "matchFound":
@@ -92,10 +102,6 @@ func main() {
 					time.Sleep(time.Millisecond * 800)
 					steps[v.imgType] = true
 				}
-
-			default:
-				fmt.Println("Carregando...")
-				fmt.Println(v)
 			}
 		}
 		fmt.Println("===================================================")
@@ -108,7 +114,7 @@ func getSteps() map[string]bool {
 	return map[string]bool{
 		"matchFound":   false,
 		"notBannedYet": false,
-		"confirmCham":  false,
+		"confirmChamp": false,
 	}
 }
 
