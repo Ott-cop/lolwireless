@@ -13,6 +13,7 @@ import (
 )
 
 func main() {
+	robotgo.MouseSleep = 1000
 	wg := sync.WaitGroup{}
 
 	steps := getSteps()
@@ -68,7 +69,6 @@ func main() {
 					fmt.Printf("Partida Encontrada!...")
 					robotgo.Move(v.x, v.y)
 					robotgo.Click()
-					time.Sleep(time.Millisecond * 800)
 					steps[v.imgType] = true
 					if steps["notBannedYet"] || steps["confirmChamp"] {
 						steps = getSteps()
@@ -84,9 +84,6 @@ func main() {
 					banning(images["lolIcon"], baseImg)
 					robotgo.Move(v.x, v.y)
 					robotgo.Click()
-					time.Sleep(time.Millisecond * 800)
-					robotgo.Move(1096, 258)
-					time.Sleep(time.Millisecond * 800)
 					steps[v.imgType] = true
 				}
 
@@ -99,7 +96,6 @@ func main() {
 					selectChampion(images["lolIcon"], images["searchChamp"], baseImg)
 					robotgo.Move(v.x, v.y)
 					robotgo.Click()
-					time.Sleep(time.Millisecond * 800)
 					steps[v.imgType] = true
 				}
 			}
@@ -161,47 +157,44 @@ func banning(lolIcon, baseImg image.Image) {
 
 	fmt.Println("Digite o nome do campeão que deseja banir: ")
 	fmt.Scanf("%s", &campeao)
-	time.Sleep(time.Millisecond * 800)
+
 	lolIconX, lolIconY, _ := verifyImagePresence(lolIcon, baseImg)
 	robotgo.Move(lolIconX, lolIconY)
 	robotgo.Click()
-	time.Sleep(time.Millisecond * 800)
+
 	// pesqBanX, pesqBanY, _ := opencv("img/banir-pesquisar.png")
 	robotgo.Move(1096, 258)
-	time.Sleep(time.Millisecond * 800)
+
 	robotgo.Click()
 	robotgo.Click()
 	robotgo.KeyPress("delete")
-	time.Sleep(time.Millisecond * 800)
 
 	robotgo.TypeStr(campeao)
-	time.Sleep(time.Millisecond * 800)
+
 	robotgo.Move(722, 313)
-	time.Sleep(time.Millisecond * 800)
+
 	robotgo.Click()
-	time.Sleep(time.Millisecond * 800)
+
 }
 
 func selectChampion(lolIcon, searchChamp, baseImg image.Image) {
 	var campeao string = ""
 	fmt.Println("Digite o nome do seu campeão: ")
 	fmt.Scanf("%s", &campeao)
-	time.Sleep(time.Millisecond * 800)
+
 	lolIconX, lolIconY, _ := verifyImagePresence(lolIcon, baseImg)
 	robotgo.Move(lolIconX, lolIconY)
 	robotgo.Click()
-	time.Sleep(time.Millisecond * 800)
+
 	pesqSelectX, pesqSelectY, _ := verifyImagePresence(searchChamp, baseImg)
 	robotgo.Move(pesqSelectX, pesqSelectY)
 	robotgo.Click()
 	robotgo.Click()
 	robotgo.KeyPress("delete")
-	time.Sleep(time.Millisecond * 800)
+
 	robotgo.TypeStr(campeao)
 
-	time.Sleep(time.Millisecond * 800)
 	robotgo.Move(722, 313)
 	robotgo.Click()
-	time.Sleep(time.Millisecond * 800)
 
 }
