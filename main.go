@@ -15,6 +15,7 @@ import (
 func main() {
 	wg := sync.WaitGroup{}
 
+	steps := getSteps()
 	images := loadImages()
 	for {
 		validationStruct := make(chan struct {
@@ -24,52 +25,24 @@ func main() {
 		}, 3)
 		baseImg := robotgo.ToImage(robotgo.CaptureScreen())
 
-		wg.Add(3)
+		wg.Add(len(steps))
 
-		go func() {
-			defer wg.Done()
-			x, y, d := verifyImagePresence(images["matchFound"], baseImg)
-			validationStruct <- struct {
-				x, y     int
-				detected bool
-				imgType  string
-			}{
-				x:        x,
-				y:        y,
-				detected: d,
-				imgType:  "matchFound",
-			}
-		}()
-
-		go func() {
-			defer wg.Done()
-			x, y, d := verifyImagePresence(images["notBannedYet"], baseImg)
-			validationStruct <- struct {
-				x, y     int
-				detected bool
-				imgType  string
-			}{
-				x:        x,
-				y:        y,
-				detected: d,
-				imgType:  "notBannedYet",
-			}
-		}()
-
-		go func() {
-			defer wg.Done()
-			x, y, d := verifyImagePresence(images["confirmChamp"], baseImg)
-			validationStruct <- struct {
-				x, y     int
-				detected bool
-				imgType  string
-			}{
-				x:        x,
-				y:        y,
-				detected: d,
-				imgType:  "confirmChamp",
-			}
-		}()
+		for s := range steps {
+			go func(s string) {
+				defer wg.Done()
+				x, y, d := verifyImagePresence(images[s], baseImg)
+				validationStruct <- struct {
+					x, y     int
+					detected bool
+					imgType  string
+				}{
+					x:        x,
+					y:        y,
+					detected: d,
+					imgType:  s,
+				}
+			}(s)
+		}
 
 		// aceitarX, aceitarY, isMatchFound := verifyImagePresence(images["notBannedYet"], baseImg)
 		// banirX, banirY, isBanning := verifyImagePresence(images["notBannedYet"], baseImg)
@@ -79,33 +52,64 @@ func main() {
 		close(validationStruct)
 
 		for v := range validationStruct {
-			if v.imgType == "matchFound" && v.detected {
-				fmt.Printf("Partida Encontrada!...")
-				robotgo.Move(v.x, v.y)
-				robotgo.Click()
-				time.Sleep(time.Millisecond * 800)
-			} else if v.imgType == "notBannedYet" && v.detected {
-				fmt.Printf("Banimento de Campeões!...")
-				banning(images["lolIcon"], baseImg)
-				robotgo.Move(v.x, v.y)
-				robotgo.Click()
-				time.Sleep(time.Millisecond * 800)
-				robotgo.Move(1096, 258)
-			} else if v.imgType == "confirmChamp" && v.detected {
-				fmt.Printf("Confirmando Campeão!...")
-				selectChampion(images["lolIcon"], images["searchChamp"], baseImg)
-				robotgo.Move(v.x, v.y)
-				robotgo.Click()
-				time.Sleep(time.Millisecond * 800)
-			} else {
+			switch v.imgType {
+			case "matchFound":
+				if v.detected {
+					fmt.Printf("Partida Encontrada!...")
+					robotgo.Move(v.x, v.y)
+					robotgo.Click()
+					time.Sleep(time.Millisecond * 800)
+					steps[v.imgType] = true
+					if steps["notBannedYet"] || steps["confirmChamp"] {
+						steps = getSteps()
+					}
+				}
+
+			case "notBannedYet":
+				if v.detected {
+					if steps[v.imgType] {
+						continue
+					}
+					fmt.Printf("Banimento de Campeões!...")
+					banning(images["lolIcon"], baseImg)
+					robotgo.Move(v.x, v.y)
+					robotgo.Click()
+					time.Sleep(time.Millisecond * 800)
+					robotgo.Move(1096, 258)
+					time.Sleep(time.Millisecond * 800)
+					steps[v.imgType] = true
+				}
+
+			case "confirmChamp":
+				if v.detected {
+					if steps[v.imgType] {
+						continue
+					}
+					fmt.Printf("Confirmando Campeão!...")
+					selectChampion(images["lolIcon"], images["searchChamp"], baseImg)
+					robotgo.Move(v.x, v.y)
+					robotgo.Click()
+					time.Sleep(time.Millisecond * 800)
+					steps[v.imgType] = true
+				}
+
+			default:
 				fmt.Println("Carregando...")
 				fmt.Println(v)
 			}
 		}
 		fmt.Println("===================================================")
-		time.Sleep(6 * time.Second)
+		time.Sleep(1 * time.Second)
 	}
 	//robotgo.Move(811, 953)
+}
+
+func getSteps() map[string]bool {
+	return map[string]bool{
+		"matchFound":   false,
+		"notBannedYet": false,
+		"confirmCham":  false,
+	}
 }
 
 func loadImages() map[string]image.Image {
